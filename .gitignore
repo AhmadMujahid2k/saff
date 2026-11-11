@@ -7,3 +7,6 @@ scripts/team.txt
 
 # Your own alarm sound (kept out of the public repo)
 Saff/Sounds/*.caf
+
+# Personal Mac automation (auto-reinstall before the free-account 7-day expiry)
+scripts/personal/
