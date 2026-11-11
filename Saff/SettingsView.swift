@@ -63,10 +63,30 @@ struct SettingsView: View {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(SaffTheme.color(.late))
             } else {
-                Label("\(alarms.scheduledCount) alarms scheduled", systemImage: "alarm.fill")
+                Label("\(alarms.scheduledCount) of 5 prayer alarms on", systemImage: "alarm.fill")
             }
             Button("Re-schedule alarms") {
                 Task { await alarms.sync(settings: model.settings) }
+            }
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                if let test = alarms.test, test.fireDate > context.date {
+                    HStack {
+                        Image(systemName: "alarm.waves.left.and.right.fill")
+                            .foregroundStyle(SaffTheme.accent)
+                            .symbolEffect(.pulse)
+                        Text("Test alarm rings in")
+                        Text(timerInterval: context.date...test.fireDate, countsDown: true)
+                            .font(.saffNumber(17, weight: .bold))
+                            .foregroundStyle(SaffTheme.accent)
+                        Spacer()
+                        Button("Cancel", role: .cancel) { alarms.cancelTest() }
+                            .buttonStyle(.bordered)
+                    }
+                } else {
+                    Button("Test alarm in 1 minute") {
+                        Task { await alarms.scheduleTest() }
+                    }
+                }
             }
         }
     }

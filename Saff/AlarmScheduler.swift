@@ -61,7 +61,7 @@ final class AlarmScheduler {
         guard await requestAccess() else { return }
         lastError = nil
         do {
-            for alarm in try manager.alarms {
+            for alarm in try manager.alarms where alarm.id != test?.id {
                 try? manager.cancel(id: alarm.id)
             }
             var count = 0
@@ -90,8 +90,9 @@ final class AlarmScheduler {
                         let ring = slot.jamaat.addingTimeInterval(TimeInterval(-config.alarmOffset * 60))
                         guard ring > now else { continue }
                         try await add(prayer: prayer, title: title, schedule: .fixed(ring))
-                        count += 1
                     }
+                    // Several dated alarms, but it's still one prayer's alarm to the user.
+                    count += 1
                 }
             }
             scheduledCount = count
@@ -100,12 +101,38 @@ final class AlarmScheduler {
         }
     }
 
+    /// The pending test alarm, if any (kept across re-syncs).
+    private(set) var test: (id: UUID, fireDate: Date)?
+
+    /// One-off alarm a minute from now, to hear the sound.
+    @MainActor
+    func scheduleTest() async {
+        guard await requestAccess() else { return }
+        cancelTest()
+        let id = UUID()
+        let fire = Date().addingTimeInterval(60)
+        do {
+            try await add(prayer: .fajr, title: "Saff test alarm", schedule: .fixed(fire), id: id)
+            test = (id, fire)
+            lastError = nil
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    func cancelTest() {
+        guard let t = test else { return }
+        try? manager.cancel(id: t.id)
+        test = nil
+    }
+
     private func alarmTitle(_ prayer: Prayer, offset: Int) -> LocalizedStringResource {
         offset == 0 ? "\(prayer.name) jamaat now" : "\(prayer.name) jamaat in \(offset) min"
     }
 
     @MainActor
-    private func add(prayer: Prayer, title: LocalizedStringResource, schedule: Alarm.Schedule) async throws {
+    private func add(prayer: Prayer, title: LocalizedStringResource, schedule: Alarm.Schedule, id: UUID = UUID()) async throws {
         let alert = AlarmPresentation.Alert(
             title: title,
             stopButton: AlarmButton(text: "Done", textColor: .black, systemImageName: "checkmark")
@@ -116,8 +143,12 @@ final class AlarmScheduler {
             tintColor: SaffTheme.accent
         )
         _ = try await manager.schedule(
-            id: UUID(),
-            configuration: .alarm(schedule: schedule, attributes: attributes)
+            id: id,
+            configuration: .alarm(
+                schedule: schedule,
+                attributes: attributes,
+                sound: .named("hayya_ala_salah.caf")
+            )
         )
     }
 }

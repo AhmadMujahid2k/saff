@@ -31,6 +31,10 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIUserInterfaceStyle: Dark
         NSAlarmKitUsageDescription: Saff rings an alarm before each jamaat so you don't miss it.
+    attributes:
+      SystemCapabilities:
+        com.apple.ApplicationGroups.iOS:
+          enabled: 1
     entitlements:
       path: Saff/Saff.entitlements
       properties:
@@ -54,6 +58,10 @@ targets:
         CFBundleDisplayName: Saff
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    attributes:
+      SystemCapabilities:
+        com.apple.ApplicationGroups.iOS:
+          enabled: 1
     entitlements:
       path: SaffWidgets/SaffWidgets.entitlements
       properties:
