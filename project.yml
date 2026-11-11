@@ -18,7 +18,12 @@ targets:
   Saff:
     type: application
     platform: iOS
-    sources: [Saff, Shared]
+    sources:
+      - Saff
+      - Shared
+      # Widget views + entry, so the Debug-only screenshot gallery can draw them.
+      - SaffWidgets/Provider.swift
+      - SaffWidgets/WidgetViews.swift
     dependencies:
       - package: SaffCore
       - target: SaffWidgets

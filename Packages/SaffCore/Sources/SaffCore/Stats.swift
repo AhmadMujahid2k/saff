@@ -33,18 +33,22 @@ public enum StatsEngine {
     public static func compute(dayKeys: [String], store: SaffStore, now: Date, settings: SaffSettings) -> PrayerStats {
         var stats = PrayerStats()
         let logs = store.logs
-        let todayKey = ScheduleEngine.dayKey(now, settings: settings)
-        let today = ScheduleEngine.schedule(for: now, settings: settings)
+        // Days before the first log are before the user started — not "unlogged".
+        let firstKey = logs.keys.min()
 
         for key in dayKeys {
+            var day: DaySchedule?
             for p in Prayer.allCases {
                 if let raw = logs[key]?[p.rawValue], let s = PrayerStatus(rawValue: raw) {
                     stats.counts[s, default: 0] += 1
                     stats.perPrayer[p, default: [:]][s, default: 0] += 1
-                } else {
-                    // Count as unlogged only once the prayer's time is over.
-                    let isPast = key < todayKey || (key == todayKey && today.slot(p).end <= now)
-                    if isPast { stats.unlogged += 1 }
+                } else if let firstKey, key >= firstKey {
+                    // Count as unlogged only once that prayer's own time is over
+                    // (yesterday's Isha is still running just after midnight).
+                    if day == nil, let date = ScheduleEngine.date(fromKey: key, settings: settings) {
+                        day = ScheduleEngine.schedule(for: date, settings: settings)
+                    }
+                    if let day, day.slot(p).end <= now { stats.unlogged += 1 }
                 }
             }
         }

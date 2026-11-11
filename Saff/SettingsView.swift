@@ -59,11 +59,15 @@ struct SettingsView: View {
                 if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
             }
         default:
+            Label("\(alarms.scheduledCount) of 5 prayer alarms on", systemImage: "alarm.fill")
+            if let until = alarms.datedAlarmsUntil {
+                Text("Maghrib alarms set until \(SaffFormat.gregorian(until, settings: model.settings, style: "d MMM")). Open Saff before then to extend.")
+                    .font(.footnote)
+                    .foregroundStyle(SaffTheme.secondaryText)
+            }
             if let error = alarms.lastError {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(SaffTheme.color(.late))
-            } else {
-                Label("\(alarms.scheduledCount) of 5 prayer alarms on", systemImage: "alarm.fill")
             }
             Button("Re-schedule alarms") {
                 Task { await alarms.sync(settings: model.settings) }
@@ -150,7 +154,13 @@ private struct PrayerSettingsSection: View {
             Label(prayer.name, systemImage: prayer.symbol)
         } footer: {
             let s = model.settings
-            Text("Today: starts \(SaffFormat.timeWithPeriod(today.start, settings: s)) · jamaat \(SaffFormat.timeWithPeriod(today.jamaat, settings: s)) · ends \(SaffFormat.timeWithPeriod(today.end, settings: s))")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Today: starts \(SaffFormat.timeWithPeriod(today.start, settings: s)) · jamaat \(SaffFormat.timeWithPeriod(today.jamaat, settings: s)) · ends \(SaffFormat.timeWithPeriod(today.end, settings: s))")
+                if !today.jamaatInWindow {
+                    Label("Jamaat time is outside today's \(prayer.name) time — update it to your mosque's current time.", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(SaffTheme.color(.late))
+                }
+            }
         }
     }
 

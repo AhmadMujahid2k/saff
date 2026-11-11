@@ -3,7 +3,13 @@ import Foundation
 /// Shared storage between the app and its widgets (App Group UserDefaults).
 public final class SaffStore: @unchecked Sendable {
     public static let appGroup = "group.com.ahmadmujahid.saff"
-    public static let shared = SaffStore()
+    /// Launched with `-demo` (screenshots), the app uses a separate store so real logs are never touched.
+    public static let shared: SaffStore = {
+        if ProcessInfo.processInfo.arguments.contains("-demo"), let demo = UserDefaults(suiteName: "saff.demo") {
+            return SaffStore(defaults: demo)
+        }
+        return SaffStore()
+    }()
 
     private let defaults: UserDefaults
     private let logsKey = "logs.v1"        // [dayKey: [prayer: status]]

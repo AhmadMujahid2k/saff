@@ -13,6 +13,10 @@ public struct PrayerSlot: Identifiable, Hashable, Sendable {
     public var id: String { "\(dayKey)-\(prayer.rawValue)" }
 
     public func contains(_ date: Date) -> Bool { start <= date && date < end }
+
+    /// False when a fixed jamaat time has drifted outside the prayer's window
+    /// (e.g. a winter Isha time kept into summer) and needs updating.
+    public var jamaatInWindow: Bool { contains(jamaat) }
 }
 
 public struct DaySchedule: Hashable, Sendable {
@@ -106,11 +110,15 @@ public enum ScheduleEngine {
         let current = all.first { $0.contains(now) }
         let next = all.first { $0.start > now }!
         let lastEnded = all.last { $0.end <= now }!
+        let target = current ?? lastEnded
+        // After midnight Isha is still running and belongs to yesterday, so the
+        // prayer day (timetable, today's dots) follows the target slot, not the clock.
+        let prayerDay = date(fromKey: target.dayKey, settings: settings) ?? now
         return PrayerMoment(
             current: current,
             next: next,
-            target: current ?? lastEnded,
-            today: schedule(for: now, settings: settings)
+            target: target,
+            today: schedule(for: prayerDay, settings: settings)
         )
     }
 

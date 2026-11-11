@@ -1,3 +1,4 @@
+import ActivityKit
 import AlarmKit
 import SaffCore
 import SwiftUI
@@ -19,6 +20,12 @@ final class AlarmScheduler {
     private(set) var scheduledCount = 0
 
     private let manager = AlarmManager.shared
+
+    /// Custom sound if one is bundled (Saff/Sounds/alarm.caf, ≤ 30 s, not in the repo), else the system alarm.
+    private static let customSoundName = "alarm.caf"
+    private static var alarmSound: AlertConfiguration.AlertSound {
+        Bundle.main.url(forResource: customSoundName, withExtension: nil) != nil ? .named(customSoundName) : .default
+    }
     private let followAzanDays = 14
 
     @MainActor
@@ -60,19 +67,23 @@ final class AlarmScheduler {
     private func replaceAll(settings: SaffSettings) async {
         guard await requestAccess() else { return }
         lastError = nil
-        do {
-            for alarm in try manager.alarms where alarm.id != test?.id {
+        if let existing = try? manager.alarms {
+            for alarm in existing where alarm.id != test?.id {
                 try? manager.cancel(id: alarm.id)
             }
-            var count = 0
-            let cal = ScheduleEngine.calendar(settings)
-            let now = Date()
+        }
+        var count = 0
+        var failures: [String] = []
+        var lastDated: Date?
+        let cal = ScheduleEngine.calendar(settings)
+        let now = Date()
 
-            for prayer in Prayer.allCases {
-                let config = settings.config(prayer)
-                guard config.alarmEnabled else { continue }
-                let title = alarmTitle(prayer, offset: config.alarmOffset)
-
+        // Each prayer is scheduled independently, so one failure doesn't drop the rest.
+        for prayer in Prayer.allCases {
+            let config = settings.config(prayer)
+            guard config.alarmEnabled else { continue }
+            let title = alarmTitle(prayer, offset: config.alarmOffset)
+            do {
                 switch config.jamaat {
                 case let .fixed(hour, minute):
                     let total = ((hour * 60 + minute - config.alarmOffset) % 1440 + 1440) % 1440
@@ -81,7 +92,6 @@ final class AlarmScheduler {
                         repeats: .weekly([.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday])
                     ))
                     try await add(prayer: prayer, title: title, schedule: rule)
-                    count += 1
 
                 case .afterAzan:
                     for dayOffset in 0..<followAzanDays {
@@ -90,16 +100,30 @@ final class AlarmScheduler {
                         let ring = slot.jamaat.addingTimeInterval(TimeInterval(-config.alarmOffset * 60))
                         guard ring > now else { continue }
                         try await add(prayer: prayer, title: title, schedule: .fixed(ring))
+                        lastDated = max(lastDated ?? ring, ring)
                     }
-                    // Several dated alarms, but it's still one prayer's alarm to the user.
-                    count += 1
                 }
+                // Several dated alarms for Maghrib, but it's still one prayer's alarm to the user.
+                count += 1
+            } catch {
+                failures.append("\(prayer.name): \(error.localizedDescription)")
             }
-            scheduledCount = count
-        } catch {
-            lastError = error.localizedDescription
         }
+        scheduledCount = count
+        datedAlarmsUntil = lastDated
+        lastError = failures.isEmpty ? nil : failures.joined(separator: "\n")
     }
+
+    /// Last day the "after azan" (Maghrib) alarms are scheduled for; they need the app opened before then.
+    private(set) var datedAlarmsUntil: Date?
+
+    #if DEBUG
+    /// Demo screenshots: show the count the real sync would, without scheduling anything.
+    func showDemoCount(settings: SaffSettings) {
+        access = .allowed
+        scheduledCount = Prayer.allCases.filter { settings.config($0).alarmEnabled }.count
+    }
+    #endif
 
     /// The pending test alarm, if any (kept across re-syncs).
     private(set) var test: (id: UUID, fireDate: Date)?
@@ -147,7 +171,7 @@ final class AlarmScheduler {
             configuration: .alarm(
                 schedule: schedule,
                 attributes: attributes,
-                sound: .named("hayya_ala_salah.caf")
+                sound: Self.alarmSound
             )
         )
     }

@@ -250,8 +250,9 @@ private struct TimetableCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Text(SaffFormat.time(slot.start, settings: settings))
                     .frame(width: 58, alignment: .trailing)
+                // Orange when a fixed jamaat time has drifted outside the prayer's window.
                 Text(SaffFormat.time(slot.jamaat, settings: settings))
-                    .foregroundStyle(SaffTheme.accent)
+                    .foregroundStyle(slot.jamaatInWindow ? SaffTheme.accent : SaffTheme.color(.late))
                     .frame(width: 58, alignment: .trailing)
                 Text(SaffFormat.time(slot.end, settings: settings))
                     .foregroundStyle(SaffTheme.secondaryText)

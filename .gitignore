@@ -4,3 +4,6 @@ Packages/SaffCore/.build/
 .DS_Store
 scripts/team.txt
 .swiftpm/
+
+# Your own alarm sound (kept out of the public repo)
+Saff/Sounds/*.caf
