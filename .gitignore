@@ -1,0 +1,4 @@
+build/
+Saff.xcodeproj/
+Packages/SaffCore/.build/
+.DS_Store
