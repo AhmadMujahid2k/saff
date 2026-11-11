@@ -104,13 +104,13 @@ final class AlarmScheduler {
     /// The pending test alarm, if any (kept across re-syncs).
     private(set) var test: (id: UUID, fireDate: Date)?
 
-    /// One-off alarm a minute from now, to hear the sound.
+    /// One-off alarm 10 seconds from now, to hear the sound.
     @MainActor
     func scheduleTest() async {
         guard await requestAccess() else { return }
         cancelTest()
         let id = UUID()
-        let fire = Date().addingTimeInterval(60)
+        let fire = Date().addingTimeInterval(10)
         do {
             try await add(prayer: .fajr, title: "Saff test alarm", schedule: .fixed(fire), id: id)
             test = (id, fire)

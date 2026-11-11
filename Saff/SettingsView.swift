@@ -83,7 +83,7 @@ struct SettingsView: View {
                             .buttonStyle(.bordered)
                     }
                 } else {
-                    Button("Test alarm in 1 minute") {
+                    Button("Test alarm in 10 seconds") {
                         Task { await alarms.scheduleTest() }
                     }
                 }
