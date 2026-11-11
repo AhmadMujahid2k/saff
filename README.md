@@ -4,12 +4,9 @@ A minimal, dark prayer tracker for iPhone, with jamaat alarms and widgets you ca
 
 *Saff* (صف) means the row worshippers stand in for congregational prayer.
 
-<p align="center">
-  <img src="docs/screenshots/widgets.png" width="240" alt="Home screen widgets">
-  <img src="docs/screenshots/today.png" width="240" alt="Today screen">
-  <img src="docs/screenshots/stats.png" width="240" alt="Stats screen">
-  <img src="docs/screenshots/settings.png" width="240" alt="Settings screen">
-</p>
+| Widgets | Today | Stats | Settings |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/widgets.png" width="180" alt="Home screen widgets"> | <img src="docs/screenshots/today.png" width="180" alt="Today screen"> | <img src="docs/screenshots/stats.png" width="180" alt="Stats screen"> | <img src="docs/screenshots/settings.png" width="180" alt="Settings screen"> |
 
 <sub>Screenshots use generated sample data.</sub>
 
