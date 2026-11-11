@@ -78,7 +78,7 @@ final class AlarmScheduler {
                     let total = ((hour * 60 + minute - config.alarmOffset) % 1440 + 1440) % 1440
                     let rule = Alarm.Schedule.relative(.init(
                         time: .init(hour: total / 60, minute: total % 60),
-                        repeats: .weekly(Locale.Weekday.allCases)
+                        repeats: .weekly([.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday])
                     ))
                     try await add(prayer: prayer, title: title, schedule: rule)
                     count += 1

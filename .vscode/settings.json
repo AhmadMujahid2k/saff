@@ -1,0 +1,8 @@
+{
+  // Xcode and SwiftPM download libraries (with their own .git) into these build folders.
+  // Keep them out of Source Control so only the Saff repo shows.
+  "git.repositoryScanIgnoredFolders": ["build", "Packages/SaffCore/.build", "node_modules"],
+  "git.ignoredRepositories": ["build/SourcePackages/checkouts/adhan-swift"],
+  "files.exclude": { "build": true, "Packages/SaffCore/.build": true },
+  "files.watcherExclude": { "**/build/**": true, "**/.build/**": true }
+}
