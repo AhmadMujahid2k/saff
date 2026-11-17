@@ -15,6 +15,7 @@ struct SettingsView: View {
 
                 ForEach(Prayer.allCases) { prayer in
                     PrayerSettingsSection(prayer: prayer)
+                    if prayer == .dhuhr { JumuahSection() }
                 }
 
                 Section("Hijri date") {
@@ -92,6 +93,60 @@ struct SettingsView: View {
                     }
                 }
             }
+        }
+    }
+}
+
+/// Friday's Dhuhr with its own jamaat time and alarm (e.g. 1:30 with the alarm at 1:00).
+private struct JumuahSection: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let jumuah = model.settings.jumuah
+        Section {
+            Toggle("Different time on Friday", isOn: Binding(
+                get: { jumuah != nil },
+                set: { on in model.update { $0.jumuah = on ? ($0.jumuah ?? SaffSettings.defaultJumuah) : nil } }
+            ))
+            if let jumuah {
+                if case let .fixed(hour, minute) = jumuah.jamaat {
+                    DatePicker("Jumu'ah time", selection: Binding(
+                        get: { Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: Date()) ?? Date() },
+                        set: { date in
+                            let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+                            edit { $0.jamaat = .fixed(hour: c.hour ?? 0, minute: c.minute ?? 0) }
+                        }
+                    ), displayedComponents: .hourAndMinute)
+                }
+                Toggle("Alarm", isOn: Binding(
+                    get: { jumuah.alarmEnabled },
+                    set: { v in edit { $0.alarmEnabled = v } }
+                ))
+                if jumuah.alarmEnabled {
+                    Stepper(jumuah.alarmOffset == 0 ? "At Jumu'ah time" : "\(jumuah.alarmOffset) min before", value: Binding(
+                        get: { jumuah.alarmOffset },
+                        set: { v in edit { $0.alarmOffset = v } }
+                    ), in: 0...90, step: 5)
+                }
+            }
+        } header: {
+            Label("Friday (Jumu'ah)", systemImage: "building.columns.fill")
+        } footer: {
+            if let jumuah, jumuah.alarmEnabled, case let .fixed(hour, minute) = jumuah.jamaat {
+                let ring = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: Date())!
+                    .addingTimeInterval(TimeInterval(-jumuah.alarmOffset * 60))
+                Text("On Fridays the alarm rings at \(ring.formatted(date: .omitted, time: .shortened)) instead of Dhuhr's. Dhuhr's alarm stays on the other days.")
+            } else if jumuah == nil {
+                Text("Turn on if Friday's Dhuhr (Jumu'ah) is at a different time.")
+            }
+        }
+    }
+
+    private func edit(_ change: (inout PrayerConfig) -> Void) {
+        model.update { settings in
+            var c = settings.jumuah ?? SaffSettings.defaultJumuah
+            change(&c)
+            settings.jumuah = c
         }
     }
 }

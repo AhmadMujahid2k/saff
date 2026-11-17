@@ -58,7 +58,7 @@ private struct NowCard: View {
         VStack(alignment: .leading, spacing: 16) {
             if let slot = moment.current {
                 HStack {
-                    Label(slot.prayer.name, systemImage: slot.prayer.symbol)
+                    Label(slot.name, systemImage: slot.prayer.symbol)
                         .font(.title2.weight(.bold))
                     Spacer()
                     Text("since \(SaffFormat.timeWithPeriod(slot.start, settings: settings))")
@@ -77,7 +77,7 @@ private struct NowCard: View {
                 WindowBar(slot: slot, now: now)
             } else {
                 HStack {
-                    Label("Next: \(moment.next.prayer.name)", systemImage: moment.next.prayer.symbol)
+                    Label("Next: \(moment.next.name)", systemImage: moment.next.prayer.symbol)
                         .font(.title2.weight(.bold))
                     Spacer()
                 }
@@ -87,7 +87,7 @@ private struct NowCard: View {
             Divider().overlay(SaffTheme.stroke)
 
             let target = moment.target
-            Text("How did you pray \(target.prayer.name)?")
+            Text("How did you pray \(target.name)?")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(SaffTheme.secondaryText)
             StatusButtons(selected: model.status(target, now: now)) { status in
@@ -294,7 +294,7 @@ private struct TimetableCard: View {
                     Circle()
                         .fill(SaffTheme.color(status))
                         .frame(width: 10, height: 10)
-                    Text(slot.prayer.name)
+                    Text(slot.name)
                         .font(.body.weight(isCurrent ? .bold : .medium))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

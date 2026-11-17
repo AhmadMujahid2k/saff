@@ -9,8 +9,13 @@ public struct PrayerSlot: Identifiable, Hashable, Sendable {
     public let start: Date
     public let end: Date
     public let jamaat: Date
+    /// Friday's Dhuhr with its own Jumu'ah settings.
+    public var isJumuah: Bool = false
 
     public var id: String { "\(dayKey)-\(prayer.rawValue)" }
+
+    /// "Jumu'ah" on Fridays (when set up), otherwise the prayer's name.
+    public var name: String { isJumuah ? "Jumu'ah" : prayer.name }
 
     public func contains(_ date: Date) -> Bool { start <= date && date < end }
 
@@ -69,6 +74,18 @@ public enum ScheduleEngine {
         return PrayerTimes(coordinates: coords, date: comps, calculationParameters: params)
     }
 
+    public static func isFriday(_ day: Date, settings: SaffSettings) -> Bool {
+        calendar(settings).component(.weekday, from: day) == 6
+    }
+
+    /// The prayer's settings on `day`: Jumu'ah's on Fridays for Dhuhr, if set up.
+    public static func config(_ prayer: Prayer, on day: Date, settings: SaffSettings) -> (config: PrayerConfig, isJumuah: Bool) {
+        if prayer == .dhuhr, let jumuah = settings.jumuah, isFriday(day, settings: settings) {
+            return (jumuah, true)
+        }
+        return (settings.config(prayer), false)
+    }
+
     public static func schedule(for day: Date, settings: SaffSettings) -> DaySchedule {
         let cal = calendar(settings)
         let key = dayKey(day, settings: settings)
@@ -85,13 +102,14 @@ public enum ScheduleEngine {
         let slots = Prayer.allCases.map { p -> PrayerSlot in
             let start = starts[p]!
             let jamaat: Date
-            switch settings.config(p).jamaat {
+            let (config, isJumuah) = config(p, on: day, settings: settings)
+            switch config.jamaat {
             case let .fixed(hour, minute):
                 jamaat = cal.date(bySettingHour: hour, minute: minute, second: 0, of: start) ?? start
             case let .afterAzan(minutes):
                 jamaat = start.addingTimeInterval(TimeInterval(minutes * 60))
             }
-            return PrayerSlot(prayer: p, dayKey: key, start: start, end: ends[p]!, jamaat: jamaat)
+            return PrayerSlot(prayer: p, dayKey: key, start: start, end: ends[p]!, jamaat: jamaat, isJumuah: isJumuah)
         }
         return DaySchedule(dayKey: key, sunrise: t.sunrise, slots: slots)
     }

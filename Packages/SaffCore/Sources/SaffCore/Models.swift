@@ -91,10 +91,22 @@ public struct SaffSettings: Codable, Hashable, Sendable {
     public var location: SaffLocation
     /// Days to shift the Hijri date (local moon sighting often differs by a day).
     public var hijriOffset: Int
+    /// Friday's Dhuhr (Jumu'ah) jamaat and alarm. nil = Friday uses the normal Dhuhr settings.
+    public var jumuah: PrayerConfig?
+
+    public init(configs: [String: PrayerConfig], location: SaffLocation, hijriOffset: Int, jumuah: PrayerConfig? = nil) {
+        self.configs = configs
+        self.location = location
+        self.hijriOffset = hijriOffset
+        self.jumuah = jumuah
+    }
 
     public func config(_ prayer: Prayer) -> PrayerConfig {
         configs[prayer.rawValue] ?? PrayerConfig(jamaat: .afterAzan(minutes: 10))
     }
+
+    /// Default Jumu'ah settings when it's first switched on: 1:30 PM, alarm 30 min before.
+    public static let defaultJumuah = PrayerConfig(jamaat: .fixed(hour: 13, minute: 30), alarmOffset: 30)
 
     public mutating func setConfig(_ config: PrayerConfig, for prayer: Prayer) {
         configs[prayer.rawValue] = config

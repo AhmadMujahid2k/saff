@@ -35,13 +35,16 @@ public struct HeatmapView: View {
     let cell: CGFloat
     let spacing: CGFloat
     let showLabels: Bool
+    /// Stretch columns to fill the available width; `cell` is then just the height.
+    let fillWidth: Bool
 
-    public init(dayKeys: [String], logs: [String: [String: String]], cell: CGFloat = 12, spacing: CGFloat = 3, showLabels: Bool = true) {
+    public init(dayKeys: [String], logs: [String: [String: String]], cell: CGFloat = 12, spacing: CGFloat = 3, showLabels: Bool = true, fillWidth: Bool = false) {
         self.dayKeys = dayKeys
         self.logs = logs
         self.cell = cell
         self.spacing = spacing
         self.showLabels = showLabels
+        self.fillWidth = fillWidth
     }
 
     public var body: some View {
@@ -63,7 +66,8 @@ public struct HeatmapView: View {
                             let status = logs[key]?[p.rawValue].flatMap(PrayerStatus.init(rawValue:))
                             RoundedRectangle(cornerRadius: cell * 0.28, style: .continuous)
                                 .fill(SaffTheme.color(status))
-                                .frame(width: cell, height: cell)
+                                .frame(width: fillWidth ? nil : cell, height: cell)
+                                .frame(maxWidth: fillWidth ? .infinity : nil)
                         }
                     }
                 }

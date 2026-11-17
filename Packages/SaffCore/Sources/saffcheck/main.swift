@@ -47,4 +47,16 @@ precondition(AutoMissed.status(logged: .late, slot: day2.slot(.dhuhr), now: duri
 precondition(AutoMissed.status(logged: nil, slot: day2.slot(.dhuhr), now: duringAsr, startKey: nil) == nil)
 precondition(AutoMissed.fill([:], now: duringAsr, settings: settings).isEmpty)
 print("Auto-missed check: OK")
+
+// Jumu'ah: Friday's Dhuhr uses its own time; other days keep Dhuhr's.
+var jsettings = settings
+jsettings.jumuah = SaffSettings.defaultJumuah
+let friday = cal.date(from: DateComponents(year: 2026, month: 11, day: 20, hour: 12))!
+let thursday = cal.date(from: DateComponents(year: 2026, month: 11, day: 19, hour: 12))!
+let fri = ScheduleEngine.schedule(for: friday, settings: jsettings).slot(.dhuhr)
+let thu = ScheduleEngine.schedule(for: thursday, settings: jsettings).slot(.dhuhr)
+precondition(fri.isJumuah && fri.name == "Jumu'ah" && cal.component(.hour, from: fri.jamaat) == 13 && cal.component(.minute, from: fri.jamaat) == 30)
+precondition(!thu.isJumuah && thu.name == "Dhuhr" && cal.component(.minute, from: thu.jamaat) == 30)
+precondition(!ScheduleEngine.schedule(for: friday, settings: settings).slot(.dhuhr).isJumuah)
+print("Jumu'ah check: OK")
 print("OK")

@@ -27,7 +27,7 @@ struct PrayerHeader: View {
         HStack(spacing: 6) {
             Image(systemName: slot.prayer.symbol)
                 .foregroundStyle(SaffTheme.accent)
-            Text(slot.prayer.name)
+            Text(slot.name)
                 .fontWeight(.bold)
             if entry.moment.current == nil {
                 Text("next").foregroundStyle(SaffTheme.tertiaryText)
@@ -163,7 +163,7 @@ struct MediumView: View {
                 TimesRow(entry: entry, slot: entry.headline)
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text("Log \(entry.moment.target.prayer.name)")
+                Text("Log \(entry.moment.target.name)")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .foregroundStyle(SaffTheme.tertiaryText)
                 Grid(horizontalSpacing: 6, verticalSpacing: 6) {
@@ -245,7 +245,7 @@ struct LargeView: View {
                     let isCurrent = entry.moment.current?.id == slot.id
                     HStack {
                         Circle().fill(SaffTheme.color(entry.status(slot))).frame(width: 7, height: 7)
-                        Text(slot.prayer.name)
+                        Text(slot.name)
                             .font(.system(size: 12, weight: isCurrent ? .bold : .medium, design: .rounded))
                             .foregroundStyle(.white)
                         Spacer()
@@ -263,20 +263,17 @@ struct LargeView: View {
             Spacer(minLength: 0)
 
             HStack(alignment: .bottom) {
-                HeatmapView(
-                    dayKeys: StatsEngine.dayKeys(last: 21, now: entry.date, settings: s),
-                    logs: entry.logs, cell: 8, spacing: 2, showLabels: false
-                )
-                Spacer(minLength: 8)
-                let stats = StatsEngine.compute(
-                    dayKeys: StatsEngine.dayKeys(last: 30, now: entry.date, settings: s),
-                    logs: entry.logs
-                )
+                let keys = StatsEngine.dayKeys(last: entry.days, now: entry.date, settings: s)
+                // Columns stretch to fill the width beside the percentage, for any number of days.
+                HeatmapView(dayKeys: keys, logs: entry.logs, cell: 9, spacing: entry.days > 21 ? 2 : 3, showLabels: false, fillWidth: true)
+                    .frame(maxWidth: .infinity)
+                    .padding(.trailing, 12)
+                let stats = StatsEngine.compute(dayKeys: keys, logs: entry.logs)
                 VStack(alignment: .trailing, spacing: 0) {
                     Text("\(stats.percent(.jamaat))%")
                         .font(.saffNumber(22, weight: .bold))
                         .foregroundStyle(SaffTheme.color(.jamaat))
-                    Text("jamaat · 30d")
+                    Text("jamaat · \(entry.days)d")
                         .font(.system(size: 9, weight: .semibold, design: .rounded))
                         .foregroundStyle(SaffTheme.tertiaryText)
                 }
@@ -313,10 +310,10 @@ struct LockWidgetView: View {
                 }
             }
         case .accessoryInline:
-            Text("\(slot.prayer.name) · Jamaat \(SaffFormat.timeWithPeriod(slot.jamaat, settings: entry.settings))")
+            Text("\(slot.name) · Jamaat \(SaffFormat.timeWithPeriod(slot.jamaat, settings: entry.settings))")
         default:
             VStack(alignment: .leading, spacing: 0) {
-                Label(slot.prayer.name, systemImage: slot.prayer.symbol)
+                Label(slot.name, systemImage: slot.prayer.symbol)
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                 HStack(spacing: 4) {
                     Text(c.label)

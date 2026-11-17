@@ -12,7 +12,7 @@ struct SaffWidgetsBundle: WidgetBundle {
 
 struct SaffHomeWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "SaffHome", provider: SaffProvider()) { entry in
+        AppIntentConfiguration(kind: "SaffHome", intent: SaffWidgetConfig.self, provider: SaffConfigurableProvider()) { entry in
             HomeWidgetView(entry: entry)
                 .containerBackground(for: .widget) { SaffTheme.background }
         }

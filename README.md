@@ -20,9 +20,9 @@ A minimal, dark prayer tracker for iPhone, with jamaat alarms and widgets you ca
 - **Widgets:**
   - Small: countdown and today's dots.
   - Medium: countdowns, times and the log buttons.
-  - Large: the date with Hijri, log buttons, today's timetable, a 3-week heatmap and jamaat %.
+  - Large: the date with Hijri, log buttons, today's timetable, a heatmap and jamaat % for 1–30 days (long-press → Edit Widget).
   - Lock screen: countdown, progress ring and an inline line.
-- **Real alarms** through AlarmKit. They ring even on silent and play a custom sound. Each prayer has its own offset before jamaat, e.g. 10 minutes, or 25 for Fajr.
+- **Real alarms** through AlarmKit. They ring even on silent and play a custom sound. Each prayer has its own offset before jamaat, e.g. 10 minutes, or 25 for Fajr. Friday can have its own Jumu'ah time and alarm, separate from Dhuhr.
 - **Stats** for 7, 30 or 90 days, or all time: percentage and count per status, the percentage of each status for every prayer, and a history heatmap.
 - **Hijri date** that moves forward at Maghrib, with a ±2 day adjustment for local moon sighting.
 - **Fully offline.** No account, server or analytics. Data stays on the device, in an App Group shared with the widgets.

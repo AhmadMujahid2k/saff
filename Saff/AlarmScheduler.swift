@@ -79,35 +79,53 @@ final class AlarmScheduler {
         let now = Date()
 
         // Each prayer is scheduled independently, so one failure doesn't drop the rest.
+        // With Jumu'ah set up, Dhuhr rings Saturday–Thursday and Jumu'ah on Friday.
+        let everyDay: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
         for prayer in Prayer.allCases {
-            let config = settings.config(prayer)
-            guard config.alarmEnabled else { continue }
-            let title = alarmTitle(prayer, offset: config.alarmOffset)
-            do {
-                switch config.jamaat {
-                case let .fixed(hour, minute):
-                    let total = ((hour * 60 + minute - config.alarmOffset) % 1440 + 1440) % 1440
-                    let rule = Alarm.Schedule.relative(.init(
-                        time: .init(hour: total / 60, minute: total % 60),
-                        repeats: .weekly([.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday])
-                    ))
-                    try await add(prayer: prayer, title: title, schedule: rule)
-
-                case .afterAzan:
-                    for dayOffset in 0..<followAzanDays {
-                        guard let day = cal.date(byAdding: .day, value: dayOffset, to: now) else { continue }
-                        let slot = ScheduleEngine.schedule(for: day, settings: settings).slot(prayer)
-                        let ring = slot.jamaat.addingTimeInterval(TimeInterval(-config.alarmOffset * 60))
-                        guard ring > now else { continue }
-                        try await add(prayer: prayer, title: title, schedule: .fixed(ring))
-                        lastDated = max(lastDated ?? ring, ring)
-                    }
-                }
-                // Several dated alarms for Maghrib, but it's still one prayer's alarm to the user.
-                count += 1
-            } catch {
-                failures.append("\(prayer.name): \(error.localizedDescription)")
+            var parts: [(name: String, config: PrayerConfig, days: [Locale.Weekday])] = []
+            if prayer == .dhuhr, let jumuah = settings.jumuah {
+                parts.append((prayer.name, settings.config(prayer), everyDay.filter { $0 != .friday }))
+                parts.append(("Jumu'ah", jumuah, [.friday]))
+            } else {
+                parts.append((prayer.name, settings.config(prayer), everyDay))
             }
+
+            var scheduledAny = false
+            for part in parts where part.config.alarmEnabled {
+                let config = part.config
+                let title = alarmTitle(part.name, offset: config.alarmOffset)
+                do {
+                    switch config.jamaat {
+                    case let .fixed(hour, minute):
+                        // A big offset can push the ring time before midnight, onto the previous weekday.
+                        let raw = hour * 60 + minute - config.alarmOffset
+                        let total = (raw % 1440 + 1440) % 1440
+                        let days = raw < 0 ? part.days.map(Self.previousWeekday) : part.days
+                        let rule = Alarm.Schedule.relative(.init(
+                            time: .init(hour: total / 60, minute: total % 60),
+                            repeats: .weekly(days)
+                        ))
+                        try await add(prayer: prayer, title: title, schedule: rule)
+
+                    case .afterAzan:
+                        for dayOffset in 0..<followAzanDays {
+                            guard let day = cal.date(byAdding: .day, value: dayOffset, to: now) else { continue }
+                            let weekday = everyDay[cal.component(.weekday, from: day) - 1]
+                            guard part.days.contains(weekday) else { continue }
+                            let slot = ScheduleEngine.schedule(for: day, settings: settings).slot(prayer)
+                            let ring = slot.jamaat.addingTimeInterval(TimeInterval(-config.alarmOffset * 60))
+                            guard ring > now else { continue }
+                            try await add(prayer: prayer, title: title, schedule: .fixed(ring))
+                            lastDated = max(lastDated ?? ring, ring)
+                        }
+                    }
+                    scheduledAny = true
+                } catch {
+                    failures.append("\(part.name): \(error.localizedDescription)")
+                }
+            }
+            // Several alarms for Maghrib (dated) or Dhuhr + Jumu'ah, but still one prayer's alarm to the user.
+            if scheduledAny { count += 1 }
         }
         scheduledCount = count
         datedAlarmsUntil = lastDated
@@ -121,7 +139,9 @@ final class AlarmScheduler {
     /// Demo screenshots: show the count the real sync would, without scheduling anything.
     func showDemoCount(settings: SaffSettings) {
         access = .allowed
-        scheduledCount = Prayer.allCases.filter { settings.config($0).alarmEnabled }.count
+        scheduledCount = Prayer.allCases.filter {
+            settings.config($0).alarmEnabled || ($0 == .dhuhr && settings.jumuah?.alarmEnabled == true)
+        }.count
     }
     #endif
 
@@ -151,8 +171,13 @@ final class AlarmScheduler {
         test = nil
     }
 
-    private func alarmTitle(_ prayer: Prayer, offset: Int) -> LocalizedStringResource {
-        offset == 0 ? "\(prayer.name) jamaat now" : "\(prayer.name) jamaat in \(offset) min"
+    private func alarmTitle(_ name: String, offset: Int) -> LocalizedStringResource {
+        offset == 0 ? "\(name) jamaat now" : "\(name) jamaat in \(offset) min"
+    }
+
+    private static func previousWeekday(_ day: Locale.Weekday) -> Locale.Weekday {
+        let all: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
+        return all[(all.firstIndex(of: day)! + 6) % 7]
     }
 
     @MainActor
