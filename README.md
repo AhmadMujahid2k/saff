@@ -14,6 +14,8 @@ A minimal, dark prayer tracker for iPhone, with jamaat alarms and widgets you ca
 
 - **Three times per prayer.** Start and end are calculated offline. Jamaat is set by you, either as a fixed clock time (Asr at 4:00) or as minutes after the azan (Maghrib + 10, which follows sunset every day).
 - **Log in one tap:** Jamaat, Alone, Late (qaza) or Missed. Tap the same button again to undo.
+- **Log past days.** Use the arrows on the timetable to go back to any earlier day and tap a prayer.
+- **Auto-missed.** Once a prayer's time ends with nothing logged, it counts as Missed, starting from your first logged day. Logging it later overrides that.
 - **Live countdowns.** "Jamaat in 12:34" before jamaat, then "Qaza in 1:05:00" until the prayer's time ends.
 - **Widgets:**
   - Small: countdown and today's dots.
@@ -21,7 +23,7 @@ A minimal, dark prayer tracker for iPhone, with jamaat alarms and widgets you ca
   - Large: the date with Hijri, log buttons, today's timetable, a 3-week heatmap and jamaat %.
   - Lock screen: countdown, progress ring and an inline line.
 - **Real alarms** through AlarmKit. They ring even on silent and play a custom sound. Each prayer has its own offset before jamaat, e.g. 10 minutes, or 25 for Fajr.
-- **Stats** for 7, 30 or 90 days, or all time: percentage and count per status, a breakdown per prayer, and a history heatmap.
+- **Stats** for 7, 30 or 90 days, or all time: percentage and count per status, the percentage of each status for every prayer, and a history heatmap.
 - **Hijri date** that moves forward at Maghrib, with a ±2 day adjustment for local moon sighting.
 - **Fully offline.** No account, server or analytics. Data stays on the device, in an App Group shared with the widgets.
 

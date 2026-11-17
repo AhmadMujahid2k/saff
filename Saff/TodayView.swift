@@ -14,7 +14,7 @@ struct TodayView: View {
                 VStack(spacing: 14) {
                     header(now: now, settings: settings)
                     NowCard(moment: moment, now: now)
-                    TimetableCard(moment: moment)
+                    TimetableCard(moment: moment, now: now)
                     WeekCard(now: now)
                 }
                 .padding(.horizontal, 16)
@@ -90,7 +90,7 @@ private struct NowCard: View {
             Text("How did you pray \(target.prayer.name)?")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(SaffTheme.secondaryText)
-            StatusButtons(selected: model.status(target)) { status in
+            StatusButtons(selected: model.status(target, now: now)) { status in
                 model.toggle(status, slot: target)
             }
         }
@@ -183,11 +183,16 @@ struct StatusButtons: View {
 private struct TimetableCard: View {
     @Environment(AppModel.self) private var model
     let moment: PrayerMoment
+    let now: Date
+    /// 0 = today's prayer day, -1 = the day before, and so on.
+    @State private var dayOffset = 0
 
     var body: some View {
         let settings = model.settings
-        let today = moment.today
+        let today = shownDay(settings: settings)
         VStack(spacing: 0) {
+            dayHeader(today, settings: settings)
+                .padding(.bottom, 10)
             HStack {
                 Text("").frame(maxWidth: .infinity, alignment: .leading)
                 Group {
@@ -220,11 +225,56 @@ private struct TimetableCard: View {
         .padding(16)
         .background(SaffTheme.card, in: .rect(cornerRadius: 24, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(SaffTheme.stroke))
+        // Jump back to today when the prayer day rolls over, so stale offsets don't linger.
+        .onChange(of: moment.today.dayKey) { dayOffset = 0 }
+    }
+
+    private func shownDay(settings: SaffSettings) -> DaySchedule {
+        guard dayOffset != 0,
+              let base = ScheduleEngine.date(fromKey: moment.today.dayKey, settings: settings),
+              let day = ScheduleEngine.calendar(settings).date(byAdding: .day, value: dayOffset, to: base)
+        else { return moment.today }
+        return ScheduleEngine.schedule(for: day, settings: settings)
+    }
+
+    private func dayHeader(_ day: DaySchedule, settings: SaffSettings) -> some View {
+        let title: String = switch dayOffset {
+        case 0: "Today"
+        case -1: "Yesterday"
+        default: ScheduleEngine.date(fromKey: day.dayKey, settings: settings)
+            .map { $0.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)) } ?? day.dayKey
+        }
+        return HStack {
+            Button { dayOffset -= 1 } label: {
+                Image(systemName: "chevron.left").frame(width: 36, height: 30)
+            }
+            Spacer()
+            VStack(spacing: 1) {
+                Text(title).font(.subheadline.weight(.semibold))
+                if dayOffset != 0 {
+                    Text("Tap a prayer to log it")
+                        .font(.caption2)
+                        .foregroundStyle(SaffTheme.tertiaryText)
+                }
+            }
+            .onTapGesture { dayOffset = 0 }
+            Spacer()
+            Button { dayOffset += 1 } label: {
+                Image(systemName: "chevron.right").frame(width: 36, height: 30)
+            }
+            .disabled(dayOffset >= 0)
+            .opacity(dayOffset >= 0 ? 0.25 : 1)
+        }
+        .font(.system(size: 15, weight: .semibold))
+        .buttonStyle(.plain)
+        .foregroundStyle(.white)
+        .tint(SaffTheme.accent)
     }
 
     private func row(_ slot: PrayerSlot, settings: SaffSettings) -> some View {
         let isCurrent = moment.current?.id == slot.id
-        let status = model.status(slot)
+        let status = model.status(slot, now: now)
+        let logged = model.loggedStatus(slot)
         return Menu {
             ForEach(PrayerStatus.allCases) { s in
                 Button {
@@ -233,7 +283,7 @@ private struct TimetableCard: View {
                     Label(s.title, systemImage: status == s ? "checkmark" : s.symbol)
                 }
             }
-            if status != nil {
+            if logged != nil {
                 Button("Clear", systemImage: "arrow.uturn.backward", role: .destructive) {
                     model.set(nil, day: slot.dayKey, prayer: slot.prayer)
                 }
@@ -280,7 +330,7 @@ private struct WeekCard: View {
             Text("Last 2 weeks")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(SaffTheme.secondaryText)
-            HeatmapView(dayKeys: keys, logs: model.logs, cell: 18, spacing: 4)
+            HeatmapView(dayKeys: keys, logs: model.effectiveLogs(now: now), cell: 18, spacing: 4)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Legend()
         }

@@ -15,8 +15,9 @@ struct StatsView: View {
         let now = Date()
         let settings = model.settings
         let keys = dayKeys(now: now, settings: settings)
-        // `model.logs` is read so the view refreshes when logs change.
-        let stats = { _ = model.logs; return StatsEngine.compute(dayKeys: keys, store: .shared, now: now, settings: settings) }()
+        // Ended, unlogged prayers count as missed.
+        let logs = model.effectiveLogs(now: now)
+        let stats = StatsEngine.compute(dayKeys: keys, logs: logs)
 
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
@@ -35,24 +36,29 @@ struct StatsView: View {
                     }
                 }
 
-                if stats.unlogged > 0 {
-                    Label("\(stats.unlogged) past prayers not logged", systemImage: "questionmark.circle")
-                        .font(.footnote)
-                        .foregroundStyle(SaffTheme.secondaryText)
-                }
-
                 card(title: "By prayer") {
                     VStack(spacing: 12) {
                         ForEach(Prayer.allCases) { p in
-                            HStack(spacing: 10) {
-                                Text(p.name)
-                                    .font(.subheadline.weight(.medium))
-                                    .frame(width: 64, alignment: .leading)
-                                StackedBar(fractions: PrayerStatus.allCases.map { (stats.percent($0, for: p), SaffTheme.color($0)) })
-                                Text("\(Int((stats.percent(.jamaat, for: p) * 100).rounded()))%")
-                                    .font(.saffNumber(13))
-                                    .foregroundStyle(SaffTheme.color(.jamaat))
-                                    .frame(width: 40, alignment: .trailing)
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(spacing: 10) {
+                                    Text(p.name)
+                                        .font(.subheadline.weight(.medium))
+                                        .frame(width: 64, alignment: .leading)
+                                    StackedBar(fractions: PrayerStatus.allCases.map { (stats.percent($0, for: p), SaffTheme.color($0)) })
+                                }
+                                // % for every status, in legend order.
+                                HStack(spacing: 0) {
+                                    ForEach(PrayerStatus.allCases) { s in
+                                        HStack(spacing: 3) {
+                                            Image(systemName: s.symbol).font(.system(size: 9, weight: .semibold))
+                                            Text("\(Int((stats.percent(s, for: p) * 100).rounded()))%")
+                                                .font(.saffNumber(12, weight: .semibold))
+                                        }
+                                        .foregroundStyle(SaffTheme.color(s))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                }
+                                .padding(.leading, 74)
                             }
                         }
                         Legend().frame(maxWidth: .infinity, alignment: .leading)
@@ -61,7 +67,7 @@ struct StatsView: View {
 
                 card(title: "History") {
                     ScrollView(.horizontal) {
-                        HeatmapView(dayKeys: keys, logs: model.logs, cell: 14, spacing: 3)
+                        HeatmapView(dayKeys: keys, logs: logs, cell: 14, spacing: 3)
                     }
                     .defaultScrollAnchor(.trailing)
                     .scrollIndicators(.hidden)

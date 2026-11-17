@@ -94,8 +94,19 @@ final class AppModel {
         logs = store.logs
     }
 
-    func status(_ slot: PrayerSlot) -> PrayerStatus? {
+    /// What the user actually logged (nil = nothing saved).
+    func loggedStatus(_ slot: PrayerSlot) -> PrayerStatus? {
         logs[slot.dayKey]?[slot.prayer.rawValue].flatMap(PrayerStatus.init(rawValue:))
+    }
+
+    /// The logged status, or Missed once the prayer's time has ended unlogged.
+    func status(_ slot: PrayerSlot, now: Date = Date()) -> PrayerStatus? {
+        AutoMissed.status(logged: loggedStatus(slot), slot: slot, now: now, startKey: AutoMissed.startKey(logs))
+    }
+
+    /// Logs with auto-missed filled in, for the heatmap and stats.
+    func effectiveLogs(now: Date = Date()) -> PrayerLogs {
+        AutoMissed.fill(logs, now: now, settings: settings)
     }
 
     func toggle(_ status: PrayerStatus, slot: PrayerSlot) {

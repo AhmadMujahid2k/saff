@@ -8,6 +8,7 @@ struct SaffEntry: TimelineEntry {
     let moment: PrayerMoment
     let logs: [String: [String: String]]
 
+    /// `logs` already has auto-missed filled in for this entry's time.
     func status(_ slot: PrayerSlot) -> PrayerStatus? {
         logs[slot.dayKey]?[slot.prayer.rawValue].flatMap(PrayerStatus.init(rawValue:))
     }
@@ -33,7 +34,7 @@ struct SaffEntry: TimelineEntry {
             date: date,
             settings: settings,
             moment: ScheduleEngine.moment(at: date, settings: settings),
-            logs: store.logs
+            logs: AutoMissed.fill(store.logs, now: date, settings: settings)
         )
     }
 }

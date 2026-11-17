@@ -270,7 +270,7 @@ struct LargeView: View {
                 Spacer(minLength: 8)
                 let stats = StatsEngine.compute(
                     dayKeys: StatsEngine.dayKeys(last: 30, now: entry.date, settings: s),
-                    store: .shared, now: entry.date, settings: s
+                    logs: entry.logs
                 )
                 VStack(alignment: .trailing, spacing: 0) {
                     Text("\(stats.percent(.jamaat))%")
