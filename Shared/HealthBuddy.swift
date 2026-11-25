@@ -10,10 +10,14 @@ struct HBSnapshot: Codable, Equatable {
     struct Protein: Codable, Equatable { let eaten: Int; let target: Int }
     struct Steps: Codable, Equatable { let count: Int?; let target: Int }
     struct Weight: Codable, Equatable { let kg: Double; let date: String; let start: Double }
+    struct Meals: Codable, Equatable { let breakfast: Int; let lunch: Int; let dinner: Int; let snack: Int; let drink: Int }
+    struct DayKcal: Codable, Equatable { let date: String; let kcal: Int }
     struct Goal: Codable, Equatable {
         let label: String?
         let weight: Double
         let date: String
+        /// Where this milestone's plan starts (the start weight, or the previous milestone).
+        var from: Double? = nil
         let kgLeft: Double
         let daysLeft: Int
         let ahead: Double?
@@ -27,6 +31,12 @@ struct HBSnapshot: Codable, Equatable {
     let burn: Int?
     let weight: Weight
     let goal: Goal?
+    // For the large widget; older files don't have them.
+    var meals: Meals? = nil
+    /// The last 7 finished days, oldest first.
+    var week: [DayKcal]? = nil
+    var deficitAvg7: Int? = nil
+    var fatKg: Double? = nil
 
     /// When the Mac produced these numbers.
     var updated: Date? {
@@ -52,7 +62,11 @@ struct HBSnapshot: Codable, Equatable {
         steps: .init(count: 6200, target: 8000),
         burn: 2600,
         weight: .init(kg: 100.2, date: "2026-11-25", start: 109),
-        goal: .init(label: "Two digits", weight: 99, date: "2026-12-08", kgLeft: 1.2, daysLeft: 13, ahead: 0.8)
+        goal: .init(label: "Two digits", weight: 99, date: "2026-12-08", from: 109, kgLeft: 1.2, daysLeft: 13, ahead: 0.8),
+        meals: .init(breakfast: 300, lunch: 450, dinner: 400, snack: 0, drink: 0),
+        week: [1910, 1775, 2680, 1200, 975, 2490, 975].enumerated().map { .init(date: "2026-11-\(19 + $0.offset)", kcal: $0.element) },
+        deficitAvg7: 843,
+        fatKg: 7.6
     )
 }
 
