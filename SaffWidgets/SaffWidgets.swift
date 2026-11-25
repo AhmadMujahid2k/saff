@@ -7,6 +7,8 @@ struct SaffWidgetsBundle: WidgetBundle {
     var body: some Widget {
         SaffHomeWidget()
         SaffLockWidget()
+        HealthBuddyWidget()
+        HealthBuddyLockWidget()
     }
 }
 

@@ -25,7 +25,8 @@ A minimal, dark prayer tracker for iPhone, with jamaat alarms and widgets you ca
 - **Real alarms** through AlarmKit. They ring even on silent and play a custom sound. Each prayer has its own offset before jamaat, e.g. 10 minutes, or 25 for Fajr. Friday can have its own Jumu'ah time and alarm, separate from Dhuhr.
 - **Stats** for 7, 30 or 90 days, or all time: percentage and count per status, the percentage of each status for every prayer, and a history heatmap.
 - **Hijri date** that moves forward at Maghrib, with a ±2 day adjustment for local moon sighting.
-- **Fully offline.** No account, server or analytics. Data stays on the device, in an App Group shared with the widgets.
+- **Health Buddy widgets (optional).** Home and lock screen widgets with today's calories left, protein, steps and weight goal from [Health Buddy](https://github.com/AhmadMujahid2k/health-buddy), a self-hosted calorie tracker. Its computer saves the numbers from `/api/widget` to a Google Drive file shared as "anyone with the link"; paste that link in Settings → Health Buddy. The widgets refresh about every 30 minutes, or right away with ↻, and keep the last numbers when offline.
+- **Fully offline** for prayers. No account, server or analytics. Prayer data stays on the device, in an App Group shared with the widgets. The Health Buddy widgets are the only part that uses the network, and only to read the Drive file you link.
 
 ## Prayer times
 

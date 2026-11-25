@@ -18,6 +18,8 @@ struct SettingsView: View {
                     if prayer == .dhuhr { JumuahSection() }
                 }
 
+                HealthBuddySection()
+
                 Section("Hijri date") {
                     Stepper(value: Binding(
                         get: { model.settings.hijriOffset },
@@ -98,6 +100,54 @@ struct SettingsView: View {
 }
 
 /// Friday's Dhuhr with its own jamaat time and alarm (e.g. 1:30 with the alarm at 1:00).
+/// The Google Drive link of the file Health Buddy publishes for the widgets.
+private struct HealthBuddySection: View {
+    @State private var link = HealthBuddy.link
+    @State private var status: String?
+    @State private var ok = false
+    @State private var testing = false
+
+    var body: some View {
+        Section {
+            TextField("Google Drive link", text: $link, axis: .vertical)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .lineLimit(1...3)
+            Button(testing ? "Checking…" : "Save and test", action: test)
+                .disabled(testing || link.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            if let status {
+                Text(status)
+                    .font(.footnote)
+                    .foregroundStyle(ok ? SaffTheme.accent : SaffTheme.color(.missed))
+            }
+        } header: {
+            Text("Health Buddy")
+        } footer: {
+            Text("For the Health Buddy widgets. Paste the link of the file the Mac updates after every log (shared as anyone with the link). Widgets refresh about every 30 minutes, or tap ↻ on the widget.")
+        }
+    }
+
+    private func test() {
+        HealthBuddy.link = link
+        link = HealthBuddy.link
+        testing = true
+        status = nil
+        Task {
+            do {
+                let s = try await HealthBuddy.refresh()
+                ok = true
+                status = "Connected · \(s.kcal.eaten) kcal eaten, \(s.kcal.left) left"
+            } catch {
+                ok = false
+                status = error.localizedDescription
+            }
+            testing = false
+            HealthBuddy.reloadWidgets()
+        }
+    }
+}
+
 private struct JumuahSection: View {
     @Environment(AppModel.self) private var model
 

@@ -41,6 +41,10 @@ struct SaffApp: App {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 model.reload()
+                // Opening Saff also brings the Health Buddy widgets up to date.
+                Task {
+                    if (try? await HealthBuddy.refresh(minAge: 60)) != nil { HealthBuddy.reloadWidgets() }
+                }
                 // Keep Maghrib's day-by-day alarms topped up.
                 guard alarmsEnabled else { return }
                 Task { await model.alarms.sync(settings: model.settings) }
