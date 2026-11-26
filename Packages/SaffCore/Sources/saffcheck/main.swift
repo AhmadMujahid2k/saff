@@ -46,6 +46,8 @@ precondition(AutoMissed.status(logged: nil, slot: day2.slot(.dhuhr), now: during
 precondition(AutoMissed.status(logged: .late, slot: day2.slot(.dhuhr), now: duringAsr, startKey: k0) == .late)
 precondition(AutoMissed.status(logged: nil, slot: day2.slot(.dhuhr), now: duringAsr, startKey: nil) == nil)
 precondition(AutoMissed.fill([:], now: duringAsr, settings: settings).isEmpty)
+let mixed = StatsEngine.compute(dayKeys: [k0], logs: ["\(k0)": ["fajr": "jamaat", "dhuhr": "alone", "asr": "late", "maghrib": "missed"]])
+precondition(mixed.prayedPercent == 75, "prayed % should exclude only missed")
 print("Auto-missed check: OK")
 
 // Jumu'ah: Friday's Dhuhr uses its own time; other days keep Dhuhr's.

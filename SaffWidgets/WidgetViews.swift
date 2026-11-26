@@ -270,10 +270,10 @@ struct LargeView: View {
                     .padding(.trailing, 12)
                 let stats = StatsEngine.compute(dayKeys: keys, logs: entry.logs)
                 VStack(alignment: .trailing, spacing: 0) {
-                    Text("\(stats.percent(.jamaat))%")
+                    Text("\(stats.prayedPercent)%")
                         .font(.saffNumber(22, weight: .bold))
                         .foregroundStyle(SaffTheme.color(.jamaat))
-                    Text("jamaat · \(entry.days)d")
+                    Text("prayed · \(entry.days)d")
                         .font(.system(size: 9, weight: .semibold, design: .rounded))
                         .foregroundStyle(SaffTheme.tertiaryText)
                 }

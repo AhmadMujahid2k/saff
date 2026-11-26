@@ -56,6 +56,11 @@ public struct PrayerStats: Sendable {
         logged == 0 ? 0 : Int((Double(count(s)) / Double(logged) * 100).rounded())
     }
 
+    /// Share of prayers actually prayed (jamaat, alone or late), i.e. everything except missed.
+    public var prayedPercent: Int {
+        logged == 0 ? 0 : Int((Double(logged - count(.missed)) / Double(logged) * 100).rounded())
+    }
+
     public func percent(_ s: PrayerStatus, for p: Prayer) -> Double {
         let row = perPrayer[p] ?? [:]
         let total = row.values.reduce(0, +)
