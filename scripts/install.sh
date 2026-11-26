@@ -29,6 +29,7 @@ fi
 echo "  $DEVICE"
 
 echo "› Building"
+./scripts/renew-profiles.sh
 xcodebuild -project Saff.xcodeproj -scheme Saff -configuration Release \
   -destination "id=$DEVICE" -derivedDataPath build \
   -allowProvisioningUpdates DEVELOPMENT_TEAM="$TEAM" \
